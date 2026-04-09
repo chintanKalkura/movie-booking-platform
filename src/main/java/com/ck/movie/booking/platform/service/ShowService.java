@@ -43,10 +43,10 @@ public class ShowService {
             Theatre theatre = theatreService.getEntityById(request.theatreId());
 
             Screen screen = theatre.getScreens().stream()
-                    .filter(s -> s.getId() == request.screenId())
+                    .filter(s -> s.getNumber() == request.screenNumber())
                     .findFirst()
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Screen " + request.screenId() + " not found in theatre: " + request.theatreId()));
+                            "Screen " + request.screenNumber() + " not found in theatre: " + request.theatreId()));
 
             int totalSeats = screen.getTotalSeats();
             int seatsAvailable = totalSeats;

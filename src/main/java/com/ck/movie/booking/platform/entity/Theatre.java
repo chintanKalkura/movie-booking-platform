@@ -21,6 +21,10 @@ public class Theatre {
     private String address;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "theatre_screens", joinColumns = @JoinColumn(name = "theatre_id"))
+    @CollectionTable(
+            name = "theatre_screens",
+            joinColumns = @JoinColumn(name = "theatre_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"theatre_id", "screen_number"})
+    )
     private List<Screen> screens = new ArrayList<>();
 }

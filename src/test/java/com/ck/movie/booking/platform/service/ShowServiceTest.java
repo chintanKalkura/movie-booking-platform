@@ -187,7 +187,7 @@ class ShowServiceTest {
 
     private Theatre buildTheatreWithScreen(int screenId, int totalSeats, ScreenType screenType) {
         Screen screen = new Screen();
-        screen.setId(screenId);
+        screen.setNumber(screenId);
         screen.setTotalSeats(totalSeats);
         screen.setScreenType(screenType);
 

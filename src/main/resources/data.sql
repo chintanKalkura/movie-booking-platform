@@ -10,8 +10,8 @@ INSERT INTO theatres (id, name, address) VALUES
     ('bbbbbbbb-0000-0000-0000-000000000001', 'PVR Cinemas',   '123 MG Road, Bengaluru, Karnataka'),
     ('bbbbbbbb-0000-0000-0000-000000000002', 'INOX Megaplex', '456 Linking Road, Mumbai, Maharashtra');
 
--- Screens  (screen_id is unique within a theatre)
-INSERT INTO theatre_screens (theatre_id, screen_id, total_seats, screen_type) VALUES
+-- Screens  (screen_number and theatre_id is unique within a theatre)
+INSERT INTO theatre_screens (theatre_id, screen_number, total_seats, screen_type) VALUES
     ('bbbbbbbb-0000-0000-0000-000000000001', 1, 200, 'IMAX'),
     ('bbbbbbbb-0000-0000-0000-000000000001', 2, 150, 'SCREEN_2D'),
     ('bbbbbbbb-0000-0000-0000-000000000001', 3, 180, 'SCREEN_3D'),

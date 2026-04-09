@@ -13,8 +13,8 @@ import lombok.Setter;
 @Setter
 public class Screen {
 
-    @Column(name = "screen_id")
-    private int id;
+    @Column(name = "screen_number")
+    private int number;
 
     private int totalSeats;
 

@@ -18,8 +18,8 @@ public record ShowCreateRequest(
         @NotBlank(message = "theatreId is required")
         String theatreId,
 
-        @Positive(message = "screenId must be a positive number")
-        int screenId,
+        @Positive(message = "screenNumber must be a positive number")
+        int screenNumber,
 
         @NotBlank(message = "priceId is required")
         String priceId,
