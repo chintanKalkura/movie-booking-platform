@@ -10,11 +10,13 @@ import com.ck.movie.booking.platform.exception.ResourceNotFoundException;
 import com.ck.movie.booking.platform.exception.ServiceException;
 import com.ck.movie.booking.platform.repository.ShowRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -68,6 +70,35 @@ public class ShowService {
             throw e;
         } catch (Exception e) {
             throw new ServiceException("Unexpected error creating show for movie: " + request.movieName(), e);
+        }
+    }
+
+    public Show getShowById(String showId) {
+        try {
+            return showRepository.findById(showId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Show not found: " + showId));
+        } catch (ServiceException | ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ServiceException("Unexpected error retrieving shows for id: " + showId, e);
+        }
+    }
+
+    public void bookSeats(int requestedSeats, String showId) {
+        try {
+            Show show = getShowById(showId);
+            if (requestedSeats > show.getSeatsAvailable()) {
+                throw new BadRequestException(
+                        "Not enough seats available. Requested: " + requestedSeats +
+                                ", Available: " + show.getSeatsAvailable() + ", for show: " + showId);
+            }
+            show.setSeatsAvailable(show.getSeatsAvailable() - requestedSeats);
+            show.setShowStatus(calculateShowStatus(show.getSeatsAvailable(), show.getTotalSeats()));
+            showRepository.save(show);
+        } catch (ServiceException | ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ServiceException("Unexpected error booking seats for show: " + showId, e);
         }
     }
 
