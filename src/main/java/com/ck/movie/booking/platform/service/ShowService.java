@@ -2,6 +2,8 @@ package com.ck.movie.booking.platform.service;
 
 import com.ck.movie.booking.platform.dto.response.ShowDetails;
 import com.ck.movie.booking.platform.entity.Show;
+import com.ck.movie.booking.platform.exception.ResourceNotFoundException;
+import com.ck.movie.booking.platform.exception.ServiceException;
 import com.ck.movie.booking.platform.repository.ShowRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,8 +22,14 @@ public class ShowService {
     private final TheatreService theatreService;
 
     public Page<ShowDetails> getShowsByMovieName(String movieName, LocalDate date, Pageable pageable) {
-        return showRepository.findByMovieNameAndShowDate(movieName, date, pageable)
-                .map(this::toDetails);
+        try {
+            return showRepository.findByMovieNameAndShowDate(movieName, date, pageable)
+                    .map(this::toDetails);
+        } catch (ServiceException | ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ServiceException("Unexpected error retrieving shows for movie: " + movieName, e);
+        }
     }
 
     private ShowDetails toDetails(Show show) {
