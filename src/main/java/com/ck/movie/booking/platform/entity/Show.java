@@ -20,7 +20,6 @@ public class Show {
     private String id;
 
     private String movieName;
-
     private String movieId;
     private String theatreId;
     private String priceId;
@@ -33,4 +32,7 @@ public class Show {
 
     @Enumerated(EnumType.STRING)
     private ShowStatus showStatus;
+
+    private int totalSeats;
+    private int seatsAvailable;
 }

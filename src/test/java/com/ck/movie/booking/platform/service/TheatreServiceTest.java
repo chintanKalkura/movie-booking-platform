@@ -24,12 +24,7 @@ class TheatreServiceTest {
 
     @Test
     void findById_mapsEntityToDetailsCorrectly() {
-        Theatre theatre = new Theatre();
-        theatre.setId("theatre-1");
-        theatre.setName("PVR Cinemas");
-        theatre.setAddress("123 MG Road, Bengaluru, Karnataka");
-
-        when(theatreRepository.findById("theatre-1")).thenReturn(Optional.of(theatre));
+        when(theatreRepository.findById("theatre-1")).thenReturn(Optional.of(buildTheatre()));
 
         TheatreDetails result = theatreService.findById("theatre-1");
 
@@ -38,11 +33,39 @@ class TheatreServiceTest {
     }
 
     @Test
-    void findById_notFound_throwsRuntimeException() {
+    void findById_notFound_throwsResourceNotFoundException() {
         when(theatreRepository.findById("missing-id")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> theatreService.findById("missing-id"))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("missing-id");
+    }
+
+    @Test
+    void getEntityById_returnsTheatreEntity() {
+        Theatre theatre = buildTheatre();
+        when(theatreRepository.findById("theatre-1")).thenReturn(Optional.of(theatre));
+
+        Theatre result = theatreService.getEntityById("theatre-1");
+
+        assertThat(result.getId()).isEqualTo("theatre-1");
+        assertThat(result.getName()).isEqualTo("PVR Cinemas");
+    }
+
+    @Test
+    void getEntityById_notFound_throwsResourceNotFoundException() {
+        when(theatreRepository.findById("missing-id")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> theatreService.getEntityById("missing-id"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("missing-id");
+    }
+
+    private Theatre buildTheatre() {
+        Theatre theatre = new Theatre();
+        theatre.setId("theatre-1");
+        theatre.setName("PVR Cinemas");
+        theatre.setAddress("123 MG Road, Bengaluru, Karnataka");
+        return theatre;
     }
 }

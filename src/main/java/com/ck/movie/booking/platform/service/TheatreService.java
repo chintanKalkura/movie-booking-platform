@@ -28,4 +28,15 @@ public class TheatreService {
             throw new ServiceException("Unexpected error retrieving theatre with id: " + id, e);
         }
     }
+
+    public Theatre getEntityById(String id) {
+        try {
+            return theatreRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Theatre not found: " + id));
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ServiceException("Unexpected error retrieving theatre with id: " + id, e);
+        }
+    }
 }

@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "theatres")
 @Getter
@@ -16,4 +19,8 @@ public class Theatre {
 
     private String name;
     private String address;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "theatre_screens", joinColumns = @JoinColumn(name = "theatre_id"))
+    private List<Screen> screens = new ArrayList<>();
 }

@@ -15,5 +15,7 @@ public record ShowDetails(
         ScreenType screenType,
         TheatreDetails theatre,
         PriceDetails price,
-        ShowStatus showStatus
+        ShowStatus showStatus,
+        int totalSeats,
+        int seatsAvailable
 ) {}
