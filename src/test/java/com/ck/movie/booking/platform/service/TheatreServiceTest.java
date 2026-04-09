@@ -46,10 +46,10 @@ class TheatreServiceTest {
         Theatre theatre = buildTheatre();
         when(theatreRepository.findById("theatre-1")).thenReturn(Optional.of(theatre));
 
-        Theatre result = theatreService.getEntityById("theatre-1");
+        TheatreDetails result = theatreService.getEntityById("theatre-1");
 
-        assertThat(result.getId()).isEqualTo("theatre-1");
-        assertThat(result.getName()).isEqualTo("PVR Cinemas");
+        assertThat(result.name()).isEqualTo("PVR Cinemas");
+        assertThat(result.address()).isEqualTo("123 MG Road, Bengaluru, Karnataka");
     }
 
     @Test

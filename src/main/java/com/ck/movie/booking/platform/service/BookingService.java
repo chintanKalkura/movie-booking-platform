@@ -1,24 +1,20 @@
 package com.ck.movie.booking.platform.service;
 
-import com.ck.movie.booking.platform.constants.enums.ShowStatus;
 import com.ck.movie.booking.platform.dto.request.BookingRequest;
 import com.ck.movie.booking.platform.dto.response.BookedShowDetails;
 import com.ck.movie.booking.platform.dto.response.BookingResponse;
 import com.ck.movie.booking.platform.dto.response.PriceDetails;
+import com.ck.movie.booking.platform.dto.response.ShowDetails;
 import com.ck.movie.booking.platform.entity.Booking;
-import com.ck.movie.booking.platform.entity.Show;
 import com.ck.movie.booking.platform.exception.BadRequestException;
 import com.ck.movie.booking.platform.exception.ResourceNotFoundException;
 import com.ck.movie.booking.platform.exception.ServiceException;
 import com.ck.movie.booking.platform.repository.BookingRepository;
-import com.ck.movie.booking.platform.repository.ShowRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -26,20 +22,17 @@ public class BookingService {
 
     private final ShowService showService;
     private final BookingRepository bookingRepository;
-    private final PriceService priceService;
-    private final MovieService movieService;
-    private final TheatreService theatreService;
 
     @Transactional
     public BookingResponse bookShow(String showId, BookingRequest request) {
         try {
-            Show show = showService.getShowById(showId);
+            ShowDetails show = showService.getShowById(showId);
 
             int requestedSeats = request.seats().size();
 
             showService.bookSeats(requestedSeats, showId);
 
-            PriceDetails price = priceService.findById(show.getPriceId());
+            PriceDetails price = show.price();
             BigDecimal totalCost = price.cost().multiply(BigDecimal.valueOf(requestedSeats));
 
             Booking booking = new Booking();
@@ -66,13 +59,13 @@ public class BookingService {
         }
     }
 
-    private BookedShowDetails buildBookedShowDetails(Show show) {
+    private BookedShowDetails buildBookedShowDetails(ShowDetails show) {
         return BookedShowDetails.builder()
-                .movie(movieService.findById(show.getMovieId()))
-                .showTime(show.getShowTime())
-                .showDate(show.getShowDate())
-                .screenType(show.getScreenType())
-                .theatre(theatreService.findById(show.getTheatreId()))
+                .movie(show.movie())
+                .showTime(show.showTime())
+                .showDate(show.showDate())
+                .screenType(show.screenType())
+                .theatre(show.theatre())
                 .build();
     }
 }

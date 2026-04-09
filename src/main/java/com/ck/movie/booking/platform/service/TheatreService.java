@@ -16,12 +16,9 @@ public class TheatreService {
 
     public TheatreDetails findById(String id) {
         try {
-            Theatre theatre = theatreRepository.findById(id)
+            return theatreRepository.findById(id)
+                    .map(this::toDetails)
                     .orElseThrow(() -> new ResourceNotFoundException("Theatre not found: " + id));
-            return TheatreDetails.builder()
-                    .name(theatre.getName())
-                    .address(theatre.getAddress())
-                    .build();
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -29,14 +26,22 @@ public class TheatreService {
         }
     }
 
-    public Theatre getEntityById(String id) {
+    public TheatreDetails getEntityById(String id) {
         try {
             return theatreRepository.findById(id)
+                    .map(this::toDetails)
                     .orElseThrow(() -> new ResourceNotFoundException("Theatre not found: " + id));
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
             throw new ServiceException("Unexpected error retrieving theatre with id: " + id, e);
         }
+    }
+
+    private TheatreDetails toDetails(Theatre theatre) {
+        return TheatreDetails.builder()
+                .name(theatre.getName())
+                .address(theatre.getAddress())
+                .build();
     }
 }

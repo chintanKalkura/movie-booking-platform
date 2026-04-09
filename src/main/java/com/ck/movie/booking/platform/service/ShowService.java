@@ -2,7 +2,9 @@ package com.ck.movie.booking.platform.service;
 
 import com.ck.movie.booking.platform.constants.enums.ShowStatus;
 import com.ck.movie.booking.platform.dto.request.ShowCreateRequest;
+import com.ck.movie.booking.platform.dto.response.MovieDetails;
 import com.ck.movie.booking.platform.dto.response.ShowDetails;
+import com.ck.movie.booking.platform.dto.response.TheatreDetails;
 import com.ck.movie.booking.platform.entity.Screen;
 import com.ck.movie.booking.platform.entity.Show;
 import com.ck.movie.booking.platform.entity.Theatre;
@@ -40,11 +42,9 @@ public class ShowService {
 
     public void createShow(ShowCreateRequest request) {
         try {
-            movieService.findById(request.movieId());
-            priceService.findById(request.priceId());
-            Theatre theatre = theatreService.getEntityById(request.theatreId());
+            TheatreDetails theatre = theatreService.getEntityById(request.theatreId());
 
-            Screen screen = theatre.getScreens().stream()
+            Screen screen = theatre.screens().stream()
                     .filter(s -> s.getNumber() == request.screenNumber())
                     .findFirst()
                     .orElseThrow(() -> new ResourceNotFoundException(
@@ -73,9 +73,10 @@ public class ShowService {
         }
     }
 
-    public Show getShowById(String showId) {
+    public ShowDetails getShowById(String showId) {
         try {
             return showRepository.findById(showId)
+                    .map(this::toDetails)
                     .orElseThrow(() -> new ResourceNotFoundException("Show not found: " + showId));
         } catch (ServiceException | ResourceNotFoundException e) {
             throw e;
@@ -86,7 +87,8 @@ public class ShowService {
 
     public void bookSeats(int requestedSeats, String showId) {
         try {
-            Show show = getShowById(showId);
+            Show show = showRepository.findById(showId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Show not found: " + showId));
             if (requestedSeats > show.getSeatsAvailable()) {
                 throw new BadRequestException(
                         "Not enough seats available. Requested: " + requestedSeats +

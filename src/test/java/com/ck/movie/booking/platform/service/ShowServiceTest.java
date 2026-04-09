@@ -124,8 +124,6 @@ class ShowServiceTest {
                 MOVIE_NAME, MOVIE_ID, THEATRE_ID, 1, PRICE_ID,
                 LocalTime.of(10, 30), TEST_DATE);
 
-        when(movieService.findById(MOVIE_ID)).thenReturn(buildMovieDetails());
-        when(priceService.findById(PRICE_ID)).thenReturn(PriceDetails.builder().cost(BigDecimal.valueOf(550)).offers(List.of()).build());
         when(theatreService.getEntityById(THEATRE_ID)).thenReturn(buildTheatreWithScreen(1, 200, ScreenType.IMAX));
         when(showRepository.save(any(Show.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -153,16 +151,12 @@ class ShowServiceTest {
                 MOVIE_NAME, MOVIE_ID, THEATRE_ID, 99, PRICE_ID,
                 LocalTime.of(10, 30), TEST_DATE);
 
-        when(movieService.findById(MOVIE_ID)).thenReturn(buildMovieDetails());
-        when(priceService.findById(PRICE_ID)).thenReturn(PriceDetails.builder().cost(BigDecimal.valueOf(350)).offers(List.of()).build());
         when(theatreService.getEntityById(THEATRE_ID)).thenReturn(buildTheatreWithScreen(1, 200, ScreenType.IMAX));
 
         assertThatThrownBy(() -> showService.createShow(request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("99");
     }
-
-    // ── helpers ──────────────────────────────────────────────────────────────
 
     private Show buildShow() {
         Show show = new Show();
@@ -185,15 +179,12 @@ class ShowServiceTest {
                 .name(MOVIE_NAME).category("Sci-Fi Thriller").language("English").rating(MovieRating.UA).build();
     }
 
-    private Theatre buildTheatreWithScreen(int screenId, int totalSeats, ScreenType screenType) {
+    private TheatreDetails buildTheatreWithScreen(int screenId, int totalSeats, ScreenType screenType) {
         Screen screen = new Screen();
         screen.setNumber(screenId);
         screen.setTotalSeats(totalSeats);
         screen.setScreenType(screenType);
 
-        Theatre theatre = new Theatre();
-        theatre.setId(THEATRE_ID);
-        theatre.setScreens(List.of(screen));
-        return theatre;
+        return new TheatreDetails("Inox", "123, MG Road, Bengaluru", List.of(screen));
     }
 }
