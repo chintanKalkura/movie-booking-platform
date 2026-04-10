@@ -13,10 +13,8 @@ import com.ck.movie.booking.platform.dto.response.ShowDetails;
 import com.ck.movie.booking.platform.dto.response.TheatreDetails;
 import com.ck.movie.booking.platform.entity.Screen;
 import com.ck.movie.booking.platform.entity.Show;
-import com.ck.movie.booking.platform.entity.Theatre;
 import com.ck.movie.booking.platform.exception.BadRequestException;
 import com.ck.movie.booking.platform.exception.ResourceNotFoundException;
-import com.ck.movie.booking.platform.exception.ServiceException;
 import com.ck.movie.booking.platform.repository.ShowRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,12 +41,14 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ShowServiceTest {
 
-    @Mock private ShowRepository showRepository;
-    @Mock private MovieService movieService;
-    @Mock private PriceService priceService;
-    @Mock private TheatreService theatreService;
-    @Mock private ShowCacheService showCacheService;
-    @InjectMocks private ShowService showService;
+    @Mock
+    private ShowRepository showRepository;
+    @Mock
+    private TheatreService theatreService;
+    @Mock
+    private ShowCacheService showCacheService;
+    @InjectMocks
+    private ShowService showService;
 
     private static final LocalDate TEST_DATE = LocalDate.of(2026, 4, 10);
     private static final String MOVIE_NAME = "Inception";

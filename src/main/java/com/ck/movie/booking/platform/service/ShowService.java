@@ -6,6 +6,7 @@ import com.ck.movie.booking.platform.cache.ShowCacheService;
 import com.ck.movie.booking.platform.constants.enums.ShowStatus;
 import com.ck.movie.booking.platform.dto.request.ShowCreateRequest;
 import com.ck.movie.booking.platform.dto.response.ShowDetails;
+import com.ck.movie.booking.platform.dto.response.TheatreDetails;
 import com.ck.movie.booking.platform.entity.Screen;
 import com.ck.movie.booking.platform.entity.Show;
 import com.ck.movie.booking.platform.exception.ResourceNotFoundException;
@@ -59,7 +60,7 @@ public class ShowService {
 
     public void createShow(ShowCreateRequest request) {
         try {
-            var theatre = theatreService.getEntityById(request.theatreId());
+            TheatreDetails theatre = theatreService.getEntityById(request.theatreId());
 
             Screen screen = theatre.screens().stream()
                     .filter(s -> s.getNumber() == request.screenNumber())
