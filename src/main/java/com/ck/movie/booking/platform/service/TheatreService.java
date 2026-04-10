@@ -42,6 +42,7 @@ public class TheatreService {
         return TheatreDetails.builder()
                 .name(theatre.getName())
                 .address(theatre.getAddress())
+                .screens(theatre.getScreens())
                 .build();
     }
 }
