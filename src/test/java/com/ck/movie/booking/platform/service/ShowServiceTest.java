@@ -46,6 +46,10 @@ class ShowServiceTest {
     @Mock
     private TheatreService theatreService;
     @Mock
+    private MovieService movieService;
+    @Mock
+    private PriceService priceService;
+    @Mock
     private ShowCacheService showCacheService;
     @InjectMocks
     private ShowService showService;
