@@ -6,6 +6,7 @@ import com.ck.movie.booking.platform.cache.ShowCacheService;
 import com.ck.movie.booking.platform.constants.enums.ShowStatus;
 import com.ck.movie.booking.platform.dto.request.ShowCreateRequest;
 import com.ck.movie.booking.platform.dto.response.ShowDetails;
+import com.ck.movie.booking.platform.dto.response.TheatreDetails;
 import com.ck.movie.booking.platform.entity.Screen;
 import com.ck.movie.booking.platform.entity.Show;
 import com.ck.movie.booking.platform.exception.ResourceNotFoundException;
@@ -59,7 +60,7 @@ public class ShowService {
 
     public void createShow(ShowCreateRequest request) {
         try {
-            var theatre = theatreService.getEntityById(request.theatreId());
+            TheatreDetails theatre = theatreService.getEntityById(request.theatreId());
 
             Screen screen = theatre.screens().stream()
                     .filter(s -> s.getNumber() == request.screenNumber())
@@ -68,6 +69,7 @@ public class ShowService {
                             "Screen " + request.screenNumber() + " not found in theatre: " + request.theatreId()));
 
             int totalSeats = screen.getTotalSeats();
+            int seatsAvailable = totalSeats;
 
             Show show = new Show();
             show.setMovieName(request.movieName());
@@ -78,8 +80,8 @@ public class ShowService {
             show.setShowTime(request.showTime());
             show.setShowDate(request.showDate());
             show.setTotalSeats(totalSeats);
-            show.setSeatsAvailable(totalSeats);
-            show.setShowStatus(calculateShowStatus(totalSeats, totalSeats));
+            show.setSeatsAvailable(seatsAvailable);
+            show.setShowStatus(calculateShowStatus(seatsAvailable, totalSeats));
 
             showRepository.save(show);
         } catch (ResourceNotFoundException e) {

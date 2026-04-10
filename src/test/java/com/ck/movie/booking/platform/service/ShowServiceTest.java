@@ -39,20 +39,20 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ShowServiceTest {
 
-    @Mock private ShowRepository showRepository;
-    @Mock private MovieService movieService;
-    @Mock private PriceService priceService;
-    @Mock private TheatreService theatreService;
-    @Mock private ShowCacheService showCacheService;
-    @InjectMocks private ShowService showService;
+    @Mock
+    private ShowRepository showRepository;
+    @Mock
+    private TheatreService theatreService;
+    @Mock
+    private ShowCacheService showCacheService;
+    @InjectMocks
+    private ShowService showService;
 
     private static final LocalDate TEST_DATE = LocalDate.of(2026, 4, 10);
     private static final String MOVIE_NAME = "Inception";
     private static final String MOVIE_ID   = "aaaaaaaa-0000-0000-0000-000000000001";
     private static final String THEATRE_ID = "bbbbbbbb-0000-0000-0000-000000000001";
     private static final String PRICE_ID   = "cccccccc-0000-0000-0000-000000000001";
-
-    // ── GET ──────────────────────────────────────────────────────────────────
 
     @Test
     void getShowsByMovieName_returnsMappedPageOfShowDetails() {
@@ -128,8 +128,6 @@ class ShowServiceTest {
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getContent()).hasSize(2);
     }
-
-    // ── CREATE ───────────────────────────────────────────────────────────────
 
     @Test
     void createShow_savesShowWithCorrectProperties() {

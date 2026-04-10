@@ -22,15 +22,6 @@ public class ShowCacheService {
     private final PriceService priceService;
     private final TheatreService theatreService;
 
-    /**
-     * Returns the stable portion of a show page for the given search parameters.
-     * Results are cached in Redis for 10 minutes (TTL configured in RedisConfig).
-     * The cache key encodes all request parameters so that different pages,
-     * page sizes, and sort orders are cached independently.
-     *
-     * Volatile fields (seatsAvailable, showStatus) are not included — callers
-     * must fetch those live and merge them before returning a response.
-     */
     @Cacheable(
             value = "shows",
             key = "#movieName + '::' + #date + '::' + #pageable.pageNumber + '::' + #pageable.pageSize + '::' + #pageable.sort"
