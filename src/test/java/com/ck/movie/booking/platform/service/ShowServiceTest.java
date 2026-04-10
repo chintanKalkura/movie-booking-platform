@@ -1,5 +1,8 @@
 package com.ck.movie.booking.platform.service;
 
+import com.ck.movie.booking.platform.cache.CachedShowDetails;
+import com.ck.movie.booking.platform.cache.CachedShowPage;
+import com.ck.movie.booking.platform.cache.ShowCacheService;
 import com.ck.movie.booking.platform.constants.enums.MovieRating;
 import com.ck.movie.booking.platform.constants.enums.ScreenType;
 import com.ck.movie.booking.platform.constants.enums.ShowStatus;
@@ -10,10 +13,8 @@ import com.ck.movie.booking.platform.dto.response.ShowDetails;
 import com.ck.movie.booking.platform.dto.response.TheatreDetails;
 import com.ck.movie.booking.platform.entity.Screen;
 import com.ck.movie.booking.platform.entity.Show;
-import com.ck.movie.booking.platform.entity.Theatre;
 import com.ck.movie.booking.platform.exception.BadRequestException;
 import com.ck.movie.booking.platform.exception.ResourceNotFoundException;
-import com.ck.movie.booking.platform.exception.ServiceException;
 import com.ck.movie.booking.platform.repository.ShowRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,7 +23,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
@@ -41,11 +41,18 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ShowServiceTest {
 
-    @Mock private ShowRepository showRepository;
-    @Mock private MovieService movieService;
-    @Mock private PriceService priceService;
-    @Mock private TheatreService theatreService;
-    @InjectMocks private ShowService showService;
+    @Mock
+    private ShowRepository showRepository;
+    @Mock
+    private TheatreService theatreService;
+    @Mock
+    private MovieService movieService;
+    @Mock
+    private PriceService priceService;
+    @Mock
+    private ShowCacheService showCacheService;
+    @InjectMocks
+    private ShowService showService;
 
     private static final LocalDate TEST_DATE = LocalDate.of(2026, 4, 10);
     private static final String MOVIE_NAME = "Inception";
@@ -59,15 +66,16 @@ class ShowServiceTest {
         Show show = buildShow();
         Pageable pageable = PageRequest.of(0, 10);
 
-        MovieDetails  movieDetails  = buildMovieDetails();
+        MovieDetails  movieDetails   = buildMovieDetails();
         TheatreDetails theatreDetails = TheatreDetails.builder().name("PVR Cinemas").address("123 MG Road").build();
-        PriceDetails  priceDetails  = PriceDetails.builder().cost(BigDecimal.valueOf(550)).offers(List.of("IMAX Weekend Special")).build();
+        PriceDetails  priceDetails   = PriceDetails.builder().cost(BigDecimal.valueOf(550)).offers(List.of("IMAX Weekend Special")).build();
 
-        when(showRepository.findByMovieNameAndShowDate(MOVIE_NAME, TEST_DATE, pageable))
-                .thenReturn(new PageImpl<>(List.of(show), pageable, 1));
-        when(movieService.findById(MOVIE_ID)).thenReturn(movieDetails);
-        when(theatreService.findById(THEATRE_ID)).thenReturn(theatreDetails);
-        when(priceService.findById(PRICE_ID)).thenReturn(priceDetails);
+        CachedShowDetails cached = new CachedShowDetails(
+                show.getId(), movieDetails, show.getShowTime(), show.getShowDate(),
+                show.getScreenType(), theatreDetails, priceDetails, show.getTotalSeats());
+        when(showCacheService.getStableShowPage(MOVIE_NAME, TEST_DATE, pageable))
+                .thenReturn(new CachedShowPage(List.of(cached), 1));
+        when(showRepository.findAllById(any())).thenReturn(List.of(show));
 
         Page<ShowDetails> result = showService.getShowsByMovieName(MOVIE_NAME, TEST_DATE, pageable);
 
@@ -87,8 +95,9 @@ class ShowServiceTest {
     @Test
     void getShowsByMovieName_noMatchingShows_returnsEmptyPage() {
         Pageable pageable = PageRequest.of(0, 10);
-        when(showRepository.findByMovieNameAndShowDate(MOVIE_NAME, TEST_DATE, pageable))
-                .thenReturn(Page.empty(pageable));
+        when(showCacheService.getStableShowPage(MOVIE_NAME, TEST_DATE, pageable))
+                .thenReturn(new CachedShowPage(List.of(), 0));
+        when(showRepository.findAllById(any())).thenReturn(List.of());
 
         Page<ShowDetails> result = showService.getShowsByMovieName(MOVIE_NAME, TEST_DATE, pageable);
 
@@ -106,11 +115,20 @@ class ShowServiceTest {
 
         Pageable pageable = PageRequest.of(0, 10);
 
-        when(showRepository.findByMovieNameAndShowDate(MOVIE_NAME, TEST_DATE, pageable))
-                .thenReturn(new PageImpl<>(List.of(show1, show2), pageable, 2));
-        when(movieService.findById(MOVIE_ID)).thenReturn(buildMovieDetails());
-        when(theatreService.findById(THEATRE_ID)).thenReturn(TheatreDetails.builder().name("PVR").address("123").build());
-        when(priceService.findById(PRICE_ID)).thenReturn(PriceDetails.builder().cost(BigDecimal.valueOf(350)).offers(List.of()).build());
+        MovieDetails   movieDetails   = buildMovieDetails();
+        TheatreDetails theatreDetails = TheatreDetails.builder().name("PVR").address("123").build();
+        PriceDetails   priceDetails   = PriceDetails.builder().cost(BigDecimal.valueOf(350)).offers(List.of()).build();
+
+        CachedShowDetails cached1 = new CachedShowDetails(
+                show1.getId(), movieDetails, show1.getShowTime(), show1.getShowDate(),
+                show1.getScreenType(), theatreDetails, priceDetails, show1.getTotalSeats());
+        CachedShowDetails cached2 = new CachedShowDetails(
+                show2.getId(), movieDetails, show2.getShowTime(), show2.getShowDate(),
+                show2.getScreenType(), theatreDetails, priceDetails, show2.getTotalSeats());
+
+        when(showCacheService.getStableShowPage(MOVIE_NAME, TEST_DATE, pageable))
+                .thenReturn(new CachedShowPage(List.of(cached1, cached2), 2));
+        when(showRepository.findAllById(any())).thenReturn(List.of(show1, show2));
 
         Page<ShowDetails> result = showService.getShowsByMovieName(MOVIE_NAME, TEST_DATE, pageable);
 

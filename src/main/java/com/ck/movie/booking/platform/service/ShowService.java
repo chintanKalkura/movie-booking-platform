@@ -1,5 +1,8 @@
 package com.ck.movie.booking.platform.service;
 
+import com.ck.movie.booking.platform.cache.CachedShowDetails;
+import com.ck.movie.booking.platform.cache.CachedShowPage;
+import com.ck.movie.booking.platform.cache.ShowCacheService;
 import com.ck.movie.booking.platform.constants.enums.ShowStatus;
 import com.ck.movie.booking.platform.dto.request.ShowCreateRequest;
 import com.ck.movie.booking.platform.dto.response.ShowDetails;
@@ -12,10 +15,15 @@ import com.ck.movie.booking.platform.exception.ServiceException;
 import com.ck.movie.booking.platform.repository.ShowRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,11 +33,24 @@ public class ShowService {
     private final MovieService movieService;
     private final PriceService priceService;
     private final TheatreService theatreService;
+    private final ShowCacheService showCacheService;
 
     public Page<ShowDetails> getShowsByMovieName(String movieName, LocalDate date, Pageable pageable) {
         try {
-            return showRepository.findByMovieNameAndShowDate(movieName, date, pageable)
-                    .map(this::toDetails);
+            CachedShowPage cachedPage = showCacheService.getStableShowPage(movieName, date, pageable);
+
+            List<String> showIds = cachedPage.content().stream()
+                    .map(CachedShowDetails::showId)
+                    .toList();
+
+            Map<String, Show> liveShowMap = showRepository.findAllById(showIds).stream()
+                    .collect(Collectors.toMap(Show::getId, Function.identity()));
+
+            List<ShowDetails> fullDetails = cachedPage.content().stream()
+                    .map(cached -> mergeWithLiveData(cached, liveShowMap.get(cached.showId())))
+                    .toList();
+
+            return new PageImpl<>(fullDetails, pageable, cachedPage.totalElements());
         } catch (ServiceException | ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -99,6 +120,20 @@ public class ShowService {
         } catch (Exception e) {
             throw new ServiceException("Unexpected error booking seats for show: " + showId, e);
         }
+    }
+
+    private ShowDetails mergeWithLiveData(CachedShowDetails cached, Show liveShow) {
+        return ShowDetails.builder()
+                .movie(cached.movie())
+                .showTime(cached.showTime())
+                .showDate(cached.showDate())
+                .screenType(cached.screenType())
+                .theatre(cached.theatre())
+                .price(cached.price())
+                .totalSeats(cached.totalSeats())
+                .showStatus(liveShow != null ? liveShow.getShowStatus() : null)
+                .seatsAvailable(liveShow != null ? liveShow.getSeatsAvailable() : 0)
+                .build();
     }
 
     private ShowDetails toDetails(Show show) {
