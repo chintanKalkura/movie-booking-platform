@@ -11,7 +11,9 @@ import com.ck.movie.booking.platform.dto.response.TheatreDetails;
 import com.ck.movie.booking.platform.entity.Screen;
 import com.ck.movie.booking.platform.entity.Show;
 import com.ck.movie.booking.platform.entity.Theatre;
+import com.ck.movie.booking.platform.exception.BadRequestException;
 import com.ck.movie.booking.platform.exception.ResourceNotFoundException;
+import com.ck.movie.booking.platform.exception.ServiceException;
 import com.ck.movie.booking.platform.repository.ShowRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +30,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -49,8 +52,7 @@ class ShowServiceTest {
     private static final String MOVIE_ID   = "aaaaaaaa-0000-0000-0000-000000000001";
     private static final String THEATRE_ID = "bbbbbbbb-0000-0000-0000-000000000001";
     private static final String PRICE_ID   = "cccccccc-0000-0000-0000-000000000001";
-
-    // ── GET ──────────────────────────────────────────────────────────────────
+    private static final String SHOW_ID    = "dddddddd-0000-0000-0000-000000000001";
 
     @Test
     void getShowsByMovieName_returnsMappedPageOfShowDetails() {
@@ -116,8 +118,6 @@ class ShowServiceTest {
         assertThat(result.getContent()).hasSize(2);
     }
 
-    // ── CREATE ───────────────────────────────────────────────────────────────
-
     @Test
     void createShow_savesShowWithCorrectProperties() {
         ShowCreateRequest request = new ShowCreateRequest(
@@ -143,6 +143,82 @@ class ShowServiceTest {
         assertThat(saved.getShowStatus()).isEqualTo(ShowStatus.EMPTY); // 100% available → EMPTY
         assertThat(saved.getShowTime()).isEqualTo(LocalTime.of(10, 30));
         assertThat(saved.getShowDate()).isEqualTo(TEST_DATE);
+    }
+
+    @Test
+    void getShowById_existingId_returnsShowDetails() {
+        Show show = buildShow();
+        when(showRepository.findById(SHOW_ID)).thenReturn(Optional.of(show));
+        when(movieService.findById(MOVIE_ID)).thenReturn(buildMovieDetails());
+        when(theatreService.findById(THEATRE_ID)).thenReturn(TheatreDetails.builder().name("PVR Cinemas").address("123 MG Road").build());
+        when(priceService.findById(PRICE_ID)).thenReturn(PriceDetails.builder().cost(BigDecimal.valueOf(550)).offers(List.of()).build());
+
+        ShowDetails result = showService.getShowById(SHOW_ID);
+
+        assertThat(result.movie()).isEqualTo(buildMovieDetails());
+        assertThat(result.showTime()).isEqualTo(LocalTime.of(10, 30));
+        assertThat(result.showDate()).isEqualTo(TEST_DATE);
+        assertThat(result.screenType()).isEqualTo(ScreenType.IMAX);
+        assertThat(result.totalSeats()).isEqualTo(200);
+        assertThat(result.seatsAvailable()).isEqualTo(100);
+    }
+
+    @Test
+    void getShowById_unknownId_throwsResourceNotFoundException() {
+        when(showRepository.findById("nonexistent")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> showService.getShowById("nonexistent"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("nonexistent");
+    }
+
+    @Test
+    void bookSeats_sufficientSeats_updatesAvailabilityAndSaves() {
+        Show show = buildShow(); // seatsAvailable=100, totalSeats=200
+        when(showRepository.findById(SHOW_ID)).thenReturn(Optional.of(show));
+        when(showRepository.save(any(Show.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        showService.bookSeats(5, SHOW_ID);
+
+        ArgumentCaptor<Show> captor = ArgumentCaptor.forClass(Show.class);
+        verify(showRepository).save(captor.capture());
+        Show saved = captor.getValue();
+
+        assertThat(saved.getSeatsAvailable()).isEqualTo(95);
+        assertThat(saved.getShowStatus()).isEqualTo(ShowStatus.FILLING_FAST); // 95/200 = 47.5%
+    }
+
+    @Test
+    void bookSeats_allRemainingSeatsBooked_statusChangeToFewSeatsRemaining() {
+        Show show = buildShow();
+        show.setSeatsAvailable(40); // 40/200 = 20% → FEW_SEATS_REMAINING after booking 1
+        when(showRepository.findById(SHOW_ID)).thenReturn(Optional.of(show));
+        when(showRepository.save(any(Show.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        showService.bookSeats(1, SHOW_ID);
+
+        ArgumentCaptor<Show> captor = ArgumentCaptor.forClass(Show.class);
+        verify(showRepository).save(captor.capture());
+        assertThat(captor.getValue().getShowStatus()).isEqualTo(ShowStatus.FEW_SEATS_REMAINING);
+    }
+
+    @Test
+    void bookSeats_showNotFound_throwsResourceNotFoundException() {
+        when(showRepository.findById("nonexistent")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> showService.bookSeats(5, "nonexistent"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("nonexistent");
+    }
+
+    @Test
+    void bookSeats_requestedMoreThanAvailable_throwsServiceException() {
+        Show show = buildShow(); // seatsAvailable=100
+        when(showRepository.findById(SHOW_ID)).thenReturn(Optional.of(show));
+
+        assertThatThrownBy(() -> showService.bookSeats(200, SHOW_ID))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Not enough seats available");
     }
 
     @Test

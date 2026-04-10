@@ -2,23 +2,20 @@ package com.ck.movie.booking.platform.service;
 
 import com.ck.movie.booking.platform.constants.enums.ShowStatus;
 import com.ck.movie.booking.platform.dto.request.ShowCreateRequest;
-import com.ck.movie.booking.platform.dto.response.MovieDetails;
 import com.ck.movie.booking.platform.dto.response.ShowDetails;
 import com.ck.movie.booking.platform.dto.response.TheatreDetails;
 import com.ck.movie.booking.platform.entity.Screen;
 import com.ck.movie.booking.platform.entity.Show;
-import com.ck.movie.booking.platform.entity.Theatre;
 import com.ck.movie.booking.platform.exception.ResourceNotFoundException;
+import com.ck.movie.booking.platform.exception.BadRequestException;
 import com.ck.movie.booking.platform.exception.ServiceException;
 import com.ck.movie.booking.platform.repository.ShowRepository;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -97,7 +94,7 @@ public class ShowService {
             show.setSeatsAvailable(show.getSeatsAvailable() - requestedSeats);
             show.setShowStatus(calculateShowStatus(show.getSeatsAvailable(), show.getTotalSeats()));
             showRepository.save(show);
-        } catch (ServiceException | ResourceNotFoundException e) {
+        } catch (ServiceException | ResourceNotFoundException | BadRequestException e) {
             throw e;
         } catch (Exception e) {
             throw new ServiceException("Unexpected error booking seats for show: " + showId, e);
